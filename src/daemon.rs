@@ -23,13 +23,14 @@ Use it with /validate?url=https.//.../gtfs.zip"#
 }
 
 #[post("/validate")]
-fn validate_post(body: web::Payload) -> impl Future<Item = Json<Response>, Error = Error> {
+fn validate_post((params, body): (web::Query<Params>, web::Payload)) -> impl Future<Item = Json<Response>, Error = Error> {
+    let max_size = params.max_size.unwrap_or(1000);
     body.map_err(Error::from)
         .fold(web::BytesMut::new(), move |mut body, chunk| {
             body.extend_from_slice(&chunk);
             Ok::<_, Error>(body)
         })
-        .and_then(|body| Ok(Json(create_issues_post(body, 1000))))
+        .and_then(|body| Ok(Json(create_issues_post(body, max_size.clone()))))
 }
 
 pub fn run_server() {
